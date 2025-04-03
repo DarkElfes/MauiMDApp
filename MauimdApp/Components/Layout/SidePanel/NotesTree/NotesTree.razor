@@ -1,0 +1,104 @@
+@if ((NoteManager.Root != null))
+{
+    <MudTreeView T="Note"
+                 Items="TreeItems"
+                 ExpandOnClick
+                 Style="overflow:hidden"
+                 SelectionMode="SelectionMode.ToggleSelection"
+                 SelectedValueChanged="NoteManager.SetSelectedNote">
+        <ItemTemplate>
+            <MudTreeViewItem Value="@context.Value"
+                             Items="@context.Children"
+                             Text="@context.Text"
+                             @key="context.Value"
+                             @oncontextmenu="@(async e => await OpenContextMenu(e, context.Value))"
+                             Expanded>
+            </MudTreeViewItem>
+        </ItemTemplate>
+    </MudTreeView>
+}
+else
+{
+    <MudProgressCircular Color="Color.Primary"
+                         Class="align-self-center"
+                         Indeterminate="true" />
+}
+
+<MudMenu @ref="_contextMenu"
+         @oncontextmenu="async () => {
+            await _contextMenu.CloseMenuAsync();
+         }"
+         PositionAtCursor
+         Dense>
+    <MudMenuItem Label="Delete"
+                 Style="color: var(--mud-palette-error)"
+                 Icon="@Icons.Material.Outlined.Delete"
+                 IconColor="Color.Error" />
+</MudMenu>
+
+@code {
+    [Inject] public required INoteManager NoteManager { get; set; }
+    [Inject] public required ISnackbar Snackbar { get; set; }
+    [Inject] public required NavigationManager Navigation { get; set; }
+
+    private List<TreeItemData<Note>> TreeItems = null!;
+    private MudMenu _contextMenu = null!;
+
+
+    protected override void OnInitialized()
+        => NoteManager.OnChangeSelectedNote += RebuildTree;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await NoteManager.InitializeAsync();
+        if (result.IsFailed)
+        {
+            Snackbar.Add(result.Errors.First().Message, Severity.Error);
+            Snackbar.Add("Reload page to try fix that problem", Severity.Warning);
+            Navigation.Refresh();
+        }
+        else
+        {
+            Snackbar.Add("Notes loaded successfully", Severity.Success);
+            RebuildTree();
+        }
+    }
+
+    public void Dispose()
+        => NoteManager.OnChangeSelectedNote -= RebuildTree;
+
+    private void RebuildTree()
+    {
+        TreeItems = ConvertRootToTreeItems(NoteManager.Root!);
+        StateHasChanged();
+    }
+
+    private List<TreeItemData<Note>> ConvertRootToTreeItems(Folder rootFolder)
+    {
+        var tree = new List<TreeItemData<Note>>();
+
+        var rootTreeItem = new TreeItemData<Note>
+        {
+            Text = rootFolder.Name,
+            Children = new List<TreeItemData<Note>>()
+        };
+
+        foreach (var subfolder in rootFolder.Subfolders)
+        {
+            rootTreeItem.Children.AddRange(ConvertRootToTreeItems(subfolder));
+        }
+
+        foreach (var note in rootFolder.Notes)
+        {
+            rootTreeItem.Children.AddRange(new TreeItemData<Note> { Text = note.Name, Value = note });
+        }
+
+        tree.Add(rootTreeItem);
+        return tree;
+    }
+
+    private async Task OpenContextMenu(MouseEventArgs e, Note? note)
+    {
+        await _contextMenu.OpenMenuAsync(e);
+    }
+}

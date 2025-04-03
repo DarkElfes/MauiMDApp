@@ -1,0 +1,34 @@
+@using MauimdApp.Components.Layout.SidePanel.NotesTree;
+
+<MudDrawer Open="true" Elevation="2" Width="400px">
+    <MudText Typo="Typo.h4"
+             Align="Align.Center"
+             Color="Color.Primary"
+             Style="margin: 20px 0">
+        Poison
+    </MudText>
+
+    <MudStack Row Spacing="0">
+        <MudIconButton Icon="@Icons.Material.Outlined.InsertDriveFile"
+                       Size="Size.Medium"
+                       Color="Color.Primary"
+                       OnClick="CreateNewNote" />
+
+        <MudIconButton Icon="@Icons.Material.Outlined.CreateNewFolder"
+                       Size="Size.Medium"
+                       Color="Color.Primary"
+                       OnClick="NoteManager.CreateNewFolder" />
+    </MudStack>
+
+    <NotesTree />
+</MudDrawer>
+
+@code {
+    [Inject] public required ISnackbar Snackbar { get; set; }
+    [Inject] public required INoteManager NoteManager { get; set; }
+
+    private void CreateNewNote()
+    {
+        NoteManager.CreateNewNote();
+    }
+}

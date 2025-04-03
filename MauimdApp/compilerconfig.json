@@ -1,0 +1,10 @@
+﻿[
+  {
+    "outputFile": "Components/MDComponents/MDCodeBlock.razor.css",
+    "inputFile": "Components/MDComponents/MDCodeBlock.razor.scss"
+  },
+  {
+    "outputFile": "wwwroot/css/app.css",
+    "inputFile": "wwwroot/css/app.scss"
+  }
+]
