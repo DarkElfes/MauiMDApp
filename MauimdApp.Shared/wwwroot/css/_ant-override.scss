@@ -1,0 +1,19 @@
+.ant-tree-node-content-wrapper {
+    width: 100% !important;
+    overflow: hidden;
+}
+
+textarea.ant-input {
+    padding: 0 !important;
+    font-size: inherit;
+}
+
+.ant-divider-horizontal {
+
+    &.ant-divider-with-text{
+
+        &::before, &::after {
+            top: 0 !important;
+        }
+    }
+}

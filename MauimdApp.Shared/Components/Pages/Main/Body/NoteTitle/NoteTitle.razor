@@ -1,0 +1,110 @@
+@implements IDisposable
+
+<Input TValue="string"
+       @ref="inputRef"
+       Bordered="false"
+       WrapperStyle="color: red; padding: 0"
+       Style="font-size: 32px; font-weight: bold; padding: 0"
+       @bind-Value:get="curName"
+       @bind-Value:set="ValueChangedHandler"
+       BindOnInput
+       OnPressEnter="HandleFocusOut"
+       @onfocusout="HandleFocusOut">
+    <Suffix>
+        @errorMessage
+    </Suffix>
+</Input>
+
+@code {
+    [Inject] public required NotificationService Notification { get; set; }
+    [Inject] public required INoteManager NoteManager { get; set; }
+    [Inject] public required IStorageProvider StorageProvider { get; set; } 
+    [Inject] public required IJSRuntime JS { get; set; }
+
+    private IJSObjectReference? module;
+    Input<string> inputRef = null!;
+
+    private string curName = null!;
+    private string availableName = null!;
+    private string errorMessage = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Adding handler for update values of input field when selected note changed
+        NoteManager.OnChangeSelectedNote += HandleSelectedNoteChanged;
+
+        // Setting initial values of input field
+        curName = availableName = NoteManager.SelectedNote?.Title ?? string.Empty;
+    }
+
+    private void HandleSelectedNoteChanged()
+    {
+        curName = availableName = NoteManager.SelectedNote?.Title ?? string.Empty;
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import",
+                "./_content/MauimdApp.Shared/Components/Pages/Main/Body/NoteTitle/NoteTitle.razor.js");                
+        }
+
+        if (NoteManager.IsNewNote)
+        {
+            _ = await Notification.Warn(new() { Message = "Updated" });
+            await inputRef.Focus();
+            await module!.InvokeVoidAsync("selectInput", inputRef.RefBack.Current);
+            NoteManager.IsNewNote = false;
+        }
+    }
+
+
+    // Handlers of input component
+    private void ValueChangedHandler(string inputName)
+    {
+        curName = inputName;
+        if (string.IsNullOrWhiteSpace(inputName))
+        {
+            errorMessage = "Note can't be without name. Please fill it.";
+            return;
+        }
+
+        var isExist = NoteManager.SelectedNote!.ParentFolder.IsExistOtherNoteWithName(NoteManager.SelectedNote, inputName);
+
+        if (!isExist)
+        {
+            availableName = inputName;
+            errorMessage = string.Empty;
+        }
+        else
+        {
+            errorMessage = "Note with this name already exist in current directory";
+        }
+    }
+    private void HandleFocusOut()
+    {
+        curName = availableName;
+        errorMessage = string.Empty;
+
+        if (NoteManager.SelectedNote!.Title == availableName ||
+            NoteManager.SelectedNote!.ParentFolder.IsExistOtherNoteWithName(NoteManager.SelectedNote, availableName))
+        {
+            return;
+        }
+
+       var result = StorageProvider.RenameNote(NoteManager.SelectedNote, availableName);
+
+       if (result.IsSuccess)
+           Notification.Success(new() { Message = "Note successfully renamed" });
+       else
+           Notification.Error(new() { Message = result.Error.Description });
+    }
+
+
+    public void Dispose()
+    {
+        NoteManager.OnChangeSelectedNote -= HandleSelectedNoteChanged;
+    }
+}

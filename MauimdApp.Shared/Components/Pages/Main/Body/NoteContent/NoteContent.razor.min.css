@@ -1,0 +1,1 @@
+﻿div ::deep textarea{width:100%;display:block;border:0;background-color:#1c1c1c;resize:none;overflow:auto;scrollbar-width:none;}div ::deep textarea::-webkit-scrollbar{display:none;}div ::deep textarea:active,div ::deep textarea:focus{outline:0;}

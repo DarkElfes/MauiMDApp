@@ -1,0 +1,39 @@
+﻿@page "/auth/callback"
+@using MauimdApp.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives
+
+<Space Style="width:100%; height: 100%"
+       Direction="SpaceDirection.Vertical"
+       Align="SpaceAlign.Center">
+    <Title>Authorization...</Title>
+    <Input Value="@_code" />
+
+    <Button OnClick="ExchangeAsync">Exchange</Button>
+</Space>
+
+@code {
+    [Inject] public required NavigationManager Navigation { get; set; }
+    [Inject] public required GoogleAuthService GoogleAuth { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var queryParameters = QueryHelpers.ParseQuery(uri.Query);
+
+        if (queryParameters.TryGetValue("code", out var code) && !StringValues.IsNullOrEmpty(code))
+        {
+            _code = code;
+            // await GoogleAuth.ExchangeCodeAsync(code);
+            // Navigation.NavigateTo("/");
+        }
+    }
+
+    async Task ExchangeAsync()
+    {
+        await GoogleAuth.ExchangeCodeAsync(_code);
+        Navigation.NavigateTo("/");
+    }
+
+    string _code = string.Empty;
+}

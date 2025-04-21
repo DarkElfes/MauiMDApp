@@ -1,0 +1,45 @@
+@using MauimdApp.Shared.Components.Pages.Main.Body.NoteContent
+@using MauimdApp.Shared.Components.Pages.Main.Body.NoteTitle
+@using Microsoft.AspNetCore.Components.Rendering
+
+@implements IDisposable
+
+@if (NoteManager.SelectedNote is { } note)
+{
+    <Flex Direction="FlexDirection.Vertical" Gap="FlexGap.Normal"
+          Style="min-width: 800px; margin: 0 auto; width: 50%">
+
+        <NoteTitle />
+
+        <Divider Style="margin: 12px 0" />
+
+        @if (isReadMode)
+        {
+            @MDConvertor.Convert(note.Content)
+        }
+        else
+        {
+            <NoteContent />
+        }
+    </Flex>
+
+    <Button Icon="@(isReadMode? IconType.Outline.Edit : @IconType.Outline.Read)"
+            Style="position: fixed; top: 20px; right: 20px;"
+            OnClick="() => isReadMode = !isReadMode">
+        @(isReadMode ? "Read" : "Edit")
+    </Button>
+}
+
+@code {
+    [Inject] public required INoteManager NoteManager { get; set; }
+    [Inject] public required IMDConvertor MDConvertor { get; set; }
+    [Inject] public required IJSRuntime JSRuntime { get; set; }
+
+    bool isReadMode = true;
+
+    protected override void OnInitialized()
+        => NoteManager.OnChangeSelectedNote += StateHasChanged;
+    
+    public void Dispose()
+        => NoteManager.OnChangeSelectedNote -= StateHasChanged;
+}

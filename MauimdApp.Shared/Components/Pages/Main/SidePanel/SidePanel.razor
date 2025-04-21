@@ -1,0 +1,43 @@
+@using MauimdApp.Shared.Components.Pages.Main.SidePanel.NoteTree;
+
+<Space Direction="SpaceDirection.Vertical"
+       Style="width:100%; padding: 30px 10px;">
+
+    <ButtonGroup>
+        <Button Icon="@IconType.Outline.File"
+                Shape="ButtonShape.CircleOutline"
+                OnClick="async () => await CreateNoteAsync()" />
+        <Button Icon="@IconType.Outline.Folder"
+                Shape="ButtonShape.CircleOutline"
+                OnClick="async () => await StorageProvider.CreateFolderAsync()" />
+    </ButtonGroup>  
+
+    <Divider />
+
+    <NoteTree />
+    
+    <Divider />
+</Space>
+
+
+
+@code {
+    [Inject] public required IStorageProvider StorageProvider { get; set; }
+    [Inject] public required INoteManager NoteManager { get; set; }
+    [Inject] public required NotificationService Notification { get; set; }
+
+
+    async Task CreateNoteAsync()
+    {
+        var result = await StorageProvider.CreateNoteAsync();
+        if (result.IsFailure)
+        {
+            _ = Notification.Error(new() { Message = result.Error.Description });
+        }
+        else
+        {
+            _ = Notification.Success(new() { Message = "Note created successfully" } );
+            NoteManager.SetSelectedNote(result.Value, true);
+        }
+    }
+}

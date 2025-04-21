@@ -1,0 +1,19 @@
+div {
+    ::deep textarea {
+        width: 100%;
+        display: block;
+        border: none;
+        background-color: #1c1c1c;
+        resize: none;
+        overflow: auto;
+        scrollbar-width: none; /* Firefox */
+
+        &::-webkit-scrollbar {
+            display: none; /* Chrome, Safari */
+        }
+
+        &:active, &:focus {
+            outline: none;  
+        }
+    }
+}

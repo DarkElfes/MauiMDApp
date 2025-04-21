@@ -1,0 +1,25 @@
+﻿@page "/auth-callback"
+
+@using System.Diagnostics
+@using AntDesign
+@using Blazored.LocalStorage
+@using Mauimd.Web.Services
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Primitives
+
+@code {
+    [Inject] public required NavigationManager Navigation { get; set; }
+    [Inject] public required GoogleAuthService GoogleAuth { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(Navigation.Uri);
+        var queryParameters = QueryHelpers.ParseQuery(uri.Query);
+
+        if (queryParameters.TryGetValue("code", out var code) && !StringValues.IsNullOrEmpty(code))
+        {
+            await GoogleAuth.ExchangeCodeForTokenAsync(code);
+        }
+    }
+
+}

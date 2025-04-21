@@ -1,0 +1,156 @@
+@implements IDisposable
+
+@if (dataSource.Any())
+{
+    <Tree TItem="Data"
+          @ref="tree"
+          Style="width: 100%"
+          Selectable
+          ShowLine
+          ExpandOnClickNode
+          DataSource="dataSource"
+          @bind-SelectedKey="SelectedKey"
+          @bind-ExpandedKeys="expandedKeys"
+          SelectableExpression="x => x.DataItem.Value is Note"
+          ChildrenExpression="x => x.DataItem.Children"
+          IsleafExpression="x => x.DataItem.Value is Note"
+          TitleExpression="x => x.DataItem.Title"
+          KeyExpression="x => x.DataItem.Key">
+        <TitleTemplate>
+            <Dropdown @ref="dropdown" Trigger="[Trigger.ContextMenu]" Style="width: 100%; display: inherit" ComplexAutoCloseAndVisible>
+                <Overlay>
+                    <Menu>
+                        <MenuItem>Rename</MenuItem>
+                        <MenuItem Icon="@IconType.Outline.Delete"
+                                  Style="color: red"
+                                  OnClick="async () => await DeleteTreeItemAsync(context.DataItem)">
+                            Delete
+                        </MenuItem>
+                    </Menu>
+                </Overlay>
+                <ChildContent>
+                    <span style="display: inherit; 100%; text-overflow: ellipsis; overflow: hidden; white-space: nowrap">
+                        @context.Title
+                    </span>
+                </ChildContent>
+            </Dropdown>
+        </TitleTemplate>
+    </Tree> 
+}
+
+@code
+{
+    [Inject] public required INoteManager NoteManager { get; set; }
+    [Inject] public required IStorageProvider StorageProvider { get; set; }
+    [Inject] public required NotificationService Notification { get; set; }
+
+    Tree<Data> tree = null!;
+    Dropdown? dropdown;
+
+    IEnumerable<Data> dataSource = [];
+    string[] expandedKeys = [];
+    string? selectedKey;
+
+    string? SelectedKey
+    {
+        get => selectedKey;
+        set
+        {
+            selectedKey = value;
+
+            var note = tree.FindFirstOrDefaultNode(x => x.Key == value)?.DataItem?.Value as Note;
+            NoteManager.SetSelectedNote(note);
+        }
+    }
+
+
+    protected override void OnInitialized()
+    {
+        StorageProvider.OnChangeRoot += UpdateTree;
+        NoteManager.OnChangeSelectedNote += UpdateTree;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await StorageProvider.InitializeAsync();
+        if (result.IsFailure)
+        {
+            _ = Notification.Error(
+                new NotificationConfig { Message = result.Error.Description });
+        }
+        else
+        {
+            _ = Notification.Success(
+                new NotificationConfig { Message = "Notes loaded successfully" });
+        }
+    }
+
+    public void Dispose(){
+        NoteManager.OnChangeSelectedNote -= UpdateTree;
+        StorageProvider.OnChangeRoot -= UpdateTree;
+    }
+
+
+    void UpdateTree()
+    {
+        selectedKey = NoteManager.SelectedNote?.RelativePath;
+        dataSource = TransformFolder(StorageProvider.Root!);
+        StateHasChanged();
+    }
+
+    async Task DeleteTreeItemAsync(Data data)
+    {
+        if(dropdown is not null) await dropdown.Close();
+
+        var result = data.Value switch
+        {
+            Note note => await StorageProvider.DeleteNoteAsync(note),
+            Folder folder => await StorageProvider.DeleteFolderAsync(folder),
+            _ => throw new InvalidOperationException("Unknown data type")
+        };
+
+        if (result.IsFailure)
+        {
+            _ = Notification.Error(new() { Message = result.Error.Description });
+        }
+        else
+        {
+            _ = Notification.Success(new() { Message = "Item deleted successfully" });
+        }
+    }
+
+    #region Data
+
+    class Data
+    {
+        public string Title { get; set; } = string.Empty;
+        public string Key { get; set; } = string.Empty;
+        public IEnumerable<Data> Children { get; set; } = [];
+        public object? Value { get; set; }
+    }
+
+    static IEnumerable<Data> TransformFolder(Folder root)
+        =>
+        [
+            .. root.Children
+                .Select(folder => new Data
+                {
+                    Key = folder.RelativePath,
+                    Title = folder.Title,
+                    Value = folder,
+                    Children = TransformFolder(folder)
+                }),
+            .. TransformNotes(root)
+        ];
+
+    static IEnumerable<Data> TransformNotes(Folder folder)
+        => folder.Notes.Select(note => new Data
+        {
+            Key = note.RelativePath,
+            Title = note.Title,
+            Value = note
+        });
+
+    #endregion
+}
+

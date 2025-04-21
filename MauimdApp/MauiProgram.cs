@@ -1,9 +1,7 @@
 ﻿using MauimdApp.Services;
-using MauimdApp.Services.Abstractions;
-using Microsoft.AspNetCore.Components;
+using MauimdApp.Shared.Services;
+using MauimdApp.Shared.Services.Abstractions;
 using Microsoft.Extensions.Logging;
-using MudBlazor;
-using MudBlazor.Services;
 
 namespace MauimdApp
 {
@@ -20,6 +18,8 @@ namespace MauimdApp
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddAntDesign();
+
 
             //Add Services
 #if WINDOWS
@@ -27,14 +27,6 @@ namespace MauimdApp
 #endif
             builder.Services.AddSingleton<INoteManager, NoteManager>();
             builder.Services.AddScoped<IMDConvertor, MDConvertor>();
-
-
-            builder.Services.AddMudServices(config =>
-            {
-                var snackbarConfig = config.SnackbarConfiguration;
-                snackbarConfig.PositionClass = Defaults.Classes.Position.BottomRight;
-                snackbarConfig.SnackbarVariant = Variant.Outlined;
-            });
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();

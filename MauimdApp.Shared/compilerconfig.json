@@ -1,0 +1,10 @@
+﻿[
+  {
+    "outputFile": "Components/Layout/Body/NoteContent/NoteContent.razor.css",
+    "inputFile": "Components/Layout/Body/NoteContent/NoteContent.razor.scss"
+  },
+  {
+    "outputFile": "wwwroot/css/style.css",
+    "inputFile": "wwwroot/css/style.scss"
+  }
+]

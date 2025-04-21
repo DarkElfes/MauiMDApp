@@ -1,0 +1,27 @@
+﻿@page "/auth"
+
+
+<Space Style="width: 100%; height: 100%"
+       Direction="SpaceDirection.Vertical"
+       Align="SpaceAlign.Center">
+    <Title Level="1">Authorization</Title>
+    <Paragraph>
+        For using this application, you need to authorize your google account.
+        This need for storing all files in your google drive.
+    </Paragraph>
+
+    <Space>
+        <SpaceItem>
+            <Button Icon="@IconType.Outline.Google"
+                    OnClick="GoogleAuth.Authorize">
+                Google
+            </Button>
+        </SpaceItem>
+    </Space>
+</Space>
+
+
+@code
+{
+    [Inject] public required GoogleAuthService GoogleAuth { get; set; }
+}

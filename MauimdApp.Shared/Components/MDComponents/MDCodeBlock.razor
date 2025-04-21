@@ -1,0 +1,33 @@
+
+<Collapse Bordered="false">
+    <Panel Header="@Title" Active>
+        <ExtraTemplate>
+            @Language
+        </ExtraTemplate>
+        <ChildContent>
+            <pre>
+            <code class="language-@(Language) @(ShowLineNumbers ? "line-numbers" : "")">
+                    @Code
+                </code>
+            </pre>
+        </ChildContent>
+    </Panel>
+</Collapse>
+
+
+@code {
+    [Inject] public required IJSRuntime JSRuntime { get; set; }
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Language { get; set; }
+    [Parameter] public string? Code { get; set; }
+    [Parameter] public bool ShowLineNumbers { get; set; } = true;
+    [Parameter] public bool ShowCopyButton { get; set; } = true;
+    [Parameter] public bool ShowCodeBlock { get; set; } = true;
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await JSRuntime.InvokeVoidAsync("Prism.highlightAll");
+    }
+}
